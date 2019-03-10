@@ -1,5 +1,4 @@
 #! /bin/bash
-
 set -e
 trap 'previous_command=$this_command; this_command=$BASH_COMMAND' DEBUG
 trap 'echo FAILED COMMAND: $previous_command' EXIT
@@ -13,27 +12,27 @@ trap 'echo FAILED COMMAND: $previous_command' EXIT
 # See: http://preshing.com/20141119/how-to-build-a-gcc-cross-compiler
 #-------------------------------------------------------------------------------------------
 
-export SYSROOT=/opt/RPI_BUILD_ROOT
+export SYSROOT=/home/pi/RPI_ROOT
 
 
 INSTALL_PATH=/opt/cross
 TARGET=arm-linux-gnueabihf
-USE_NEWLIB=0
 LINUX_ARCH=arm
 CONFIGURATION_OPTIONS="--disable-werror"
 SYSROOT_OPTIONS="--with-sysroot=$SYSROOT --with-build-sysroot=$SYSROOT"
-
+USE_NEWLIB=0
 PARALLEL_MAKE=-j4
-BINUTILS_VERSION=binutils-2.25.1
-GCC_VERSION=gcc-4.9.2
-LINUX_KERNEL_VERSION=linux-4.1.7
-GLIBC_VERSION=glibc-2.20
+BINUTILS_VERSION=binutils-2.30
+GCC_VERSION=gcc-6.3.0
+LINUX_KERNEL_VERSION=linux-4.9.80
+GLIBC_VERSION=glibc-2.27
 MPFR_VERSION=mpfr-3.1.2
 GMP_VERSION=gmp-6.0.0a
 MPC_VERSION=mpc-1.0.2
-ISL_VERSION=isl-0.12.2
+ISL_VERSION=isl-0.16.1
 CLOOG_VERSION=cloog-0.18.1
 export PATH=$INSTALL_PATH/bin:$PATH
+
 
 # Download packages
 export http_proxy=$HTTP_PROXY https_proxy=$HTTP_PROXY ftp_proxy=$HTTP_PROXY
@@ -57,8 +56,9 @@ ln -sf `ls -1d ../mpfr-*/` mpfr
 ln -sf `ls -1d ../gmp-*/` gmp
 ln -sf `ls -1d ../mpc-*/` mpc
 ln -sf `ls -1d ../isl-*/` isl
-ln -sf `ls -1d ../cloog-*/` cloog
+#ln -sf `ls -1d ../cloog-*/` cloog
 cd ..
+
 
 # Step 1. Binutils
 mkdir -p build-binutils
