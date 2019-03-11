@@ -12,7 +12,8 @@ trap 'echo FAILED COMMAND: $previous_command' EXIT
 # See: http://preshing.com/20141119/how-to-build-a-gcc-cross-compiler
 #-------------------------------------------------------------------------------------------
 
-export SYSROOT=/home/pi/RPI_ROOT
+# export SYSROOT=$RPI_ROOT/home/pi/
+export SYSROOT=$RPI_ROOT
 
 
 INSTALL_PATH=/opt/cross
@@ -48,7 +49,8 @@ wget -nc ftp://gcc.gnu.org/pub/gcc/infrastructure/$CLOOG_VERSION.tar.gz
 
 
 # Extract everything
-for f in *.tar*; do tar xfkv $f; done
+# for f in *.tar*; do tar xfkv $f; done
+for f in *.tar*; do tar xfv $f; done
 
 # Make symbolic links
 cd $GCC_VERSION

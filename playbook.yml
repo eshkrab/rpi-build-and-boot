@@ -1,12 +1,19 @@
 ---
 - hosts: all
   remote_user: vagrant
-  sudo: yes
+  become: yes
+  become_user: root
   vars:
     of_version: of_v0.10.1_linuxarmv6l_release
-    image: 2018-11-13-raspbian-stretch-lite
+    image: 2018-11-13-raspbian-stretch-lite.img
     offset_boot: 4194304
     offset_root: 50331648
+
+  gather_facts: False
+  pre_tasks:
+    - raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+    - setup: # aka gather_facts
+
   tasks:
     - apt: upgrade=dist update_cache=yes
     - command: mkdir -p /opt/raspberrypi creates=/opt/raspberrypi
@@ -22,11 +29,12 @@
     - apt: name=pkg-config
     - apt: name=git
     - apt: name=python-pip
+    - apt: name=python-pip
     - apt: name=python-dev
     - apt: name=unzip
     - apt: name=gawk
     - apt: name=libudev-dev
-    - apt: bison
+    - apt: name=bison
 
     - apt: name=sshpass
 
@@ -39,7 +47,6 @@
     - apt: name=tinyproxy
     - lineinfile: dest="/etc/tinyproxy.conf" line="Allow 10.0.0.0/8"
     - service: name=tinyproxy state=restarted
-
 
     - file: path=/opt/raspberrypi/boot state=directory
     - file: path=/opt/raspberrypi/root state=directory
@@ -60,15 +67,24 @@
     - file: src=/opt/raspberrypi/root/opt dest=/opt/RPI_BUILD_ROOT/opt state=link
     - command: rsync -avz /opt/raspberrypi/root/usr/ /opt/RPI_BUILD_ROOT/usr
 
+
+    - file: path=/tmp/CROSS_BUILD_TOOLS state=directory
+    - copy: src=build_cross_gcc.sh dest=/tmp/CROSS_BUILD_TOOLS/build_cross_gcc.sh mode=0744
+    - shell: /tmp/CROSS_BUILD_TOOLS/build_cross_gcc.sh chdir=/tmp/CROSS_BUILD_TOOLS creates=/opt/cross/bin/arm-linux-gnueabihf
+
+    # - shell: 
+    #     cmd: rm libudev.so libanl.so libBrokenLocale.so libcidn.so libcrypt.so libdbus-1.so libdl.so libexpat.so libglib-2.0.so liblzma.so libm.so libnsl.so libnss_compat.so libnss_dns.so libnss_files.so libnss_hesiod.so libnss_nisplus.so libnss_nis.so libpcre.so  libresolv.so libthread_db.so libusb-1.0.so libutil.so libz.so
+    #     chdir: /usr/lib/arm-linux-gnueabihf
+
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libanl.so.1           dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libanl.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libBrokenLocale.so.1  dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libBrokenLocale.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libcidn.so.1          dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libcidn.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libcrypt.so.1         dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libcrypt.so state=link
-    - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libdbus-1.so.3.8.13   dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libdbus-1.so state=link
+    - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libdbus-1.so.3.14.15   dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libdbus-1.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libdl.so.2            dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libdl.so state=link
-    - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libexpat.so.1.6.0     dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libexpat.so state=link
+    - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libexpat.so.1.6.2     dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libexpat.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libglib-2.0.so.0      dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libglib-2.0.so state=link
-    - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/liblzma.so.5.0.0      dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/liblzma.so state=link
+    - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/liblzma.so.5.2.2      dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/liblzma.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libm.so.6             dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libm.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libnsl.so.1           dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libnsl.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libnss_compat.so.2    dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libnss_compat.so state=link
@@ -78,18 +94,11 @@
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libnss_nisplus.so.2   dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libnss_nisplus.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libnss_nis.so.2       dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libnss_nis.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libpcre.so.3          dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libpcre.so state=link
-    - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libpng12.so.0         dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libpng12.so.0 state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libresolv.so.2        dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libresolv.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libthread_db.so.1     dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libthread_db.so state=link
-    - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libusb-0.1.so.4       dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libusb-0.1.so.4 state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libusb-1.0.so.0.1.0   dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libusb-1.0.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libutil.so.1          dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libutil.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libz.so.1.2.8         dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libz.so state=link
-    - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libudev.so.1.5.0      dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libudev.so state=link
-
-    - file: path=/tmp/CROSS_BUILD_TOOLS state=directory
-    - copy: src=build_cross_gcc.sh dest=/tmp/CROSS_BUILD_TOOLS/build_cross_gcc.sh mode=0744
-    - shell: /tmp/CROSS_BUILD_TOOLS/build_cross_gcc.sh chdir=/tmp/CROSS_BUILD_TOOLS creates=/opt/cross/bin/arm-linux-gnueabihf-g++
 
       #environmental vars
     - lineinfile: dest="/home/vagrant/.profile" line="export GCC_PREFIX=arm-linux-gnueabinhf"
@@ -111,32 +120,6 @@
     - file: src=/opt/raspberrypi/root/opt/openframeworks dest=/opt/openframeworks state=link
     - command: chown -R vagrant /opt/raspberrypi/root/opt/{{of_version}}
 
-    - shell: 
-        cmd:rm libudev.so libanl.so libBrokenLocale.so libcidn.so libcrypt.so libdbus-1.so libdl.so libexpat.so libglib-2.0.so liblzma.so libm.so libnsl.so libnss_compat.so libnss_dns.so libnss_files.so libnss_hesiod.so libnss_nisplus.so libnss_nis.so libpcre.so  libresolv.so libthread_db.so libusb-1.0.so libutil.so libz.so
-        chdir                                                                                       = /usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libanl.so.1  libanl.so  chdir                   = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libBrokenLocale.so.1  libBrokenLocale.so  chdir = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libcidn.so.1  libcidn.so  chdir                 = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libcrypt.so.1  libcrypt.so  chdir               = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libdbus-1.so.3.14.15 libdbus-1.so  chdir        = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libdl.so.2  libdl.so  chdir                     = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libexpat.so.1.6.2  libexpat.so  chdir           = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libglib-2.0.so.0  libglib-2.0.so  chdir         = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/liblzma.so.5.2.2  liblzma.so  chdir             = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libm.so.6  libm.so    chdir                     = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/ libnsl.so.1  libnsl.so chdir                   = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libnss_compat.so.2  libnss_compat.so   chdir    = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libnss_dns.so.2  libnss_dns.so  chdir           = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libnss_files.so.2  libnss_files.so   chdir      = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libnss_hesiod.so.2  libnss_hesiod.so  chdir     = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libnss_nisplus.so.2  libnss_nisplus.so  chdir   = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libnss_nis.so.2  libnss_nis.so    chdir         = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libpcre.so.3  libpcre.so  chdir                 = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libresolv.so.2  libresolv.so  chdir             = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libthread_db.so.1  libthread_db.so  chdir       = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libusb-1.0.so.0.1.0  libusb-1.0.so  chdir       = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libutil.so.1  libutil.so  chdir                 = usr/lib/arm-linux-gnueabihf
-    - shell: ln -s../../../lib/arm-linux-gnueabihf/libz.so.1.2.8  libz.so  chdir                   = usr/lib/arm-linux-gnueabihf
 
   handlers:
 
