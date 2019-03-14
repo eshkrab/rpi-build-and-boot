@@ -6,6 +6,8 @@
   vars:
     of_version: of_v0.10.1_linuxarmv6l_release
     image: 2018-11-13-raspbian-stretch-lite.img
+    # offset_boot: 4194304
+    # offset_root: 7897874432
     offset_boot: 4194304
     offset_root: 50331648
 
@@ -16,14 +18,15 @@
 
   tasks:
     - apt: upgrade=dist update_cache=yes
-    - command: mkdir -p /opt/raspberrypi creates=/opt/raspberrypi
+    # - command: mkdir -p /opt/raspberrypi creates=/opt/raspberrypi
+    - file: path=/opt/raspberrypi state=directory
 
     - apt: name=nfs-kernel-server
     - lineinfile: dest=/etc/exports line="/opt/raspberrypi/root 10.0.0.0/24(rw,sync,no_root_squash,no_subtree_check)"
 
     - lineinfile: dest=/etc/cron.d/opt_raspberrypi_root line="* * * * * root /bin/mount /opt/raspberrypi/root" create=yes
 
-    - service: name=nfs-kernel-server state=restarted
+    # - service: name=nfs-kernel-server state=restarted
 
     - apt: name=build-essential
     - apt: name=pkg-config
@@ -35,8 +38,11 @@
     - apt: name=gawk
     - apt: name=libudev-dev
     - apt: name=bison
+    - apt: name=exfat-fuse
+    - apt: name=exfat-utils
 
     - apt: name=sshpass
+    - apt: name=kpartx
 
     - pip: name=ansible
     - pip: name=paramiko
@@ -44,17 +50,47 @@
     - pip: name=jinja2
     - pip: name=httplib2
 
-    - apt: name=tinyproxy
-    - lineinfile: dest="/etc/tinyproxy.conf" line="Allow 10.0.0.0/8"
-    - service: name=tinyproxy state=restarted
+    # - apt: name=tinyproxy
+    # - lineinfile: dest="/etc/tinyproxy.conf" line="Allow 10.0.0.0/8"
+    # - service: name=tinyproxy state=restarted
 
     - file: path=/opt/raspberrypi/boot state=directory
     - file: path=/opt/raspberrypi/root state=directory
 
-    - mount: src="/vagrant/{{image}}" name="/opt/raspberrypi/boot" fstype="auto"  opts="loop,offset={{offset_boot}},noauto" state="mounted"
-    - mount: src="/vagrant/{{image}}" name="/opt/raspberrypi/root" fstype="auto"  opts="loop,offset={{offset_root}},noauto" state="mounted"
-    - lineinfile: dest=/etc/rc.local line="mount /opt/raspberrypi/root" insertbefore="exit 0"
-    - lineinfile: dest=/etc/rc.local line="mount /opt/raspberrypi/boot" insertbefore="exit 0"
+# sudo add-apt-repository ppa:ricotz/testing
+# sudo apt-get update
+# sudo apt-get install libcairo2-dev
+# sudo apt-get install libglu1-mesa-dev freeglut3-dev mesa-common-dev
+# sudo apt-get install libglew-dev
+# sudo apt-get install alsa-utils
+# sudo apt-get install alsa
+# sudo apt-get install libmpg123-dev
+# sudo apt-get install libgtk2.0-dev
+# sudo apt install libasound2-dev
+# sudo apt-get install libpulse-dev
+# sudo apt-get install libssl-dev
+# sudo apt-get install portaudio19-dev
+# sudo apt-get install libalut-dev
+# sudo apt-get install libgstreamer1.0-0
+# sudo apt-get install gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+# sudo apt-get install gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly
+# sudo apt-get install gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools
+# sudo apt-get install libgstreamer0.10-dev libgstreamer-plugins-base0.10-dev
+# sudo apt-get install libfontconfig1-dev libfreetype6-dev libpng-dev
+# sudo apt-get install libcairo2-dev libjpeg-dev libgif-dev
+# sudo apt-get install libgstreamer-plugins-base1.0-dev
+
+
+    - copy: src=2018-11-13-raspbian-stretch-lite.img dest=/home/vagrant/ mode=0755
+    # - mount: src="/vagrant/{{image}}" name="/opt/raspberrypi/boot" fstype="vfat"  opts="loop,offset={{offset_boot}},auto,sizelimit=29360128" state="mounted"
+    # - command: losetup -d /dev/loop0 /vagrant/{{image}}
+    - command: kpartx -a -v /home/vagrant/2018-11-13-raspbian-stretch-lite.img
+    - mount: src="/dev/mapper/loop0p1" name="/opt/raspberrypi/boot" fstype="vfat"   state="mounted"
+    - mount: src="/dev/mapper/loop0p2" name="/opt/raspberrypi/root" fstype="ext4"   state="mounted"
+    # - mount: src="home/vagrant/{{image}}" name="/opt/raspberrypi/boot" fstype="auto"  opts="loop,offset={{offset_boot}}" state="mounted"
+    # - mount: src="home/vagrant/{{image}}" name="/opt/raspberrypi/root" fstype="auto"  opts="loop,offset={{offset_root}}" state="mounted"
+    # - lineinfile: dest=/etc/rc.local line="mount /opt/raspberrypi/root" insertbefore="exit 0"
+    # - lineinfile: dest=/etc/rc.local line="mount /opt/raspberrypi/boot" insertbefore="exit 0"
 
     # the pi is unbootable unless it is told not to mount the root filesystem from the card!
     - lineinfile: dest=/opt/raspberrypi/root/etc/fstab regexp="^\/dev\/mmcblk0p2" state="absent"
@@ -86,6 +122,7 @@
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libglib-2.0.so.0      dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libglib-2.0.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/liblzma.so.5.2.2      dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/liblzma.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libm.so.6             dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libm.so state=link
+    # - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libmn1.so.1           dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libmn1.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libnsl.so.1           dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libnsl.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libnss_compat.so.2    dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libnss_compat.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libnss_dns.so.2       dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libnss_dns.so state=link
@@ -95,13 +132,15 @@
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libnss_nis.so.2       dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libnss_nis.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libpcre.so.3          dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libpcre.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libresolv.so.2        dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libresolv.so state=link
+    # - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/librt.so.2            dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/librt.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libthread_db.so.1     dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libthread_db.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libusb-1.0.so.0.1.0   dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libusb-1.0.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libutil.so.1          dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libutil.so state=link
+    - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libuuid.so.1.3.0          dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libuuid.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libz.so.1.2.8         dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libz.so state=link
 
       #environmental vars
-    - lineinfile: dest="/home/vagrant/.profile" line="export GCC_PREFIX=arm-linux-gnueabinhf"
+    - lineinfile: dest="/home/vagrant/.profile" line="export GCC_PREFIX=arm-linux-gnueabihf"
     - lineinfile: dest="/home/vagrant/.profile" line="export GST_VERSION=1.0"
     - lineinfile: dest="/home/vagrant/.profile" line="export RPI_ROOT=/opt/raspberrypi/root"
     #- lineinfile: dest="/home/vagrant/.profile" line="export RPI_BUILD_ROOT=/opt/RPI_BUILD_ROOT"
