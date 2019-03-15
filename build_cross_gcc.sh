@@ -24,7 +24,7 @@ SYSROOT_OPTIONS="--with-sysroot=$SYSROOT --with-build-sysroot=$SYSROOT"
 USE_NEWLIB=0
 PARALLEL_MAKE=-j4
 BINUTILS_VERSION=binutils-2.30
-GCC_VERSION=gcc-6.4.0
+GCC_VERSION=gcc-6.3.0
 LINUX_KERNEL_VERSION=linux-4.9.80
 GLIBC_VERSION=glibc-2.27
 MPFR_VERSION=mpfr-3.1.2
@@ -78,6 +78,7 @@ if [ $USE_NEWLIB -eq 0 ]; then
 fi
 
 # Step 3. C/C++ Compilers
+sed -i '1474s/.*/    || xloc.file[0] == '\''\\0'\'' || xloc.file[0] == '\''\\xff'\''/' /tmp/CROSS_BUILD_TOOLS/$GCC_VERSION/gcc/ubsan.c
 mkdir -p build-gcc
 cd build-gcc
 if [ $USE_NEWLIB -ne 0 ]; then
