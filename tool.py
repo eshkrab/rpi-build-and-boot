@@ -23,7 +23,7 @@ def offsets(filename):
   """ % (filename, offset_boot, offset_root)
 
 def get_offsets(filename):
-  lines = subprocess.check_output("fdisk -d %s" % filename, shell=True)
+  lines = subprocess.check_output("sfdisk -d %s" % filename, shell=True)
   lines = lines.split("\n")
 
   offset_boot = 512 * int(lines[0].split(",", 1)[0])

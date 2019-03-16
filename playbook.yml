@@ -149,9 +149,9 @@
     - lineinfile: dest="/home/vagrant/.profile" line="export PLATFORM_ARCH=armv6l"
     - lineinfile: dest="/home/vagrant/.profile" line="export PKG_CONFIG_PATH=${RPI_ROOT}/usr/lib/${GCC_PREFIX}/pkgconfig:${RPI_ROOT}/usr/lib/pkgconfig:${RPI_ROOT}/usr/share/pkgconfig"
     - lineinfile: dest="/home/vagrant/.profile" line="export CXX=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-g++"
-    - lineinfile: dest="/home/vagrant/.profile" line="export CXX=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-gcc"
-    - lineinfile: dest="/home/vagrant/.profile" line="export CXX=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-ar"
-    - lineinfile: dest="/home/vagrant/.profile" line="export CXX=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-ld"
+    - lineinfile: dest="/home/vagrant/.profile" line="export CC=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-gcc"
+    - lineinfile: dest="/home/vagrant/.profile" line="export AR=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-ar"
+    - lineinfile: dest="/home/vagrant/.profile" line="export LD=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-ld"
     
     #OF
     - unarchive: src={{of_version}}.tar.gz dest=/opt/raspberrypi/root/opt creates=/opt/raspberrypi/root/opt/{{of_version}}
