@@ -78,6 +78,7 @@ if [ $USE_NEWLIB -eq 0 ]; then
 fi
 
 # Step 3. C/C++ Compilers
+#fix the ubsan.c gcc error
 sed -i '1474s/.*/    || xloc.file[0] == '\''\\0'\'' || xloc.file[0] == '\''\\xff'\''/' /tmp/CROSS_BUILD_TOOLS/$GCC_VERSION/gcc/ubsan.c
 mkdir -p build-gcc
 cd build-gcc
