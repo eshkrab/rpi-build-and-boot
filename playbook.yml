@@ -31,6 +31,7 @@
     - apt: name=build-essential
     - apt: name=pkg-config
     - apt: name=git
+    - apt: name=ccache
     - apt: name=python-pip
     - apt: name=python-pip
     - apt: name=python-dev
@@ -108,9 +109,9 @@
     - copy: src=build_cross_gcc.sh dest=/tmp/CROSS_BUILD_TOOLS/build_cross_gcc.sh mode=0744
     - shell: /tmp/CROSS_BUILD_TOOLS/build_cross_gcc.sh chdir=/tmp/CROSS_BUILD_TOOLS creates=/opt/cross/bin/arm-linux-gnueabihf
 
-    # - shell: 
-    #     cmd: rm libudev.so libanl.so libBrokenLocale.so libcidn.so libcrypt.so libdbus-1.so libdl.so libexpat.so libglib-2.0.so liblzma.so libm.so libnsl.so libnss_compat.so libnss_dns.so libnss_files.so libnss_hesiod.so libnss_nisplus.so libnss_nis.so libpcre.so  libresolv.so libthread_db.so libusb-1.0.so libutil.so libz.so
-    #     chdir: /usr/lib/arm-linux-gnueabihf
+    - shell: 
+        cmd: rm libanl.so libBrokenLocale.so libcidn.so libcrypt.so libdbus-1.so libdl.so libexpat.so libglib-2.0.so liblzma.so libm.so libmnl.so libnsl.so libnss_compat.so libnss_dns.so libnss_files.so libnss_hesiod.so libnss_nisplus.so libnss_nis.so libpcre.so  libresolv.so librt.so libthread_db.so libusb-1.0.so libutil.so libuuid.so libz.so
+        chdir: /opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf
 
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libanl.so.1           dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libanl.so state=link
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libBrokenLocale.so.1  dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libBrokenLocale.so state=link
@@ -140,7 +141,7 @@
     - file: src=/opt/raspberrypi/root/lib/arm-linux-gnueabihf/libz.so.1.2.8         dest=/opt/raspberrypi/root/usr/lib/arm-linux-gnueabihf/libz.so state=link
 
       #environmental vars
-    # - lineinfile: dest="/home/vagrant/.profile" line="export GCC_PREFIX=arm-linux-gnueabihf"
+    - lineinfile: dest="/home/vagrant/.profile" line="export GCC_PREFIX=arm-linux-gnueabihf"
     - lineinfile: dest="/home/vagrant/.profile" line="export GST_VERSION=1.0"
     - lineinfile: dest="/home/vagrant/.profile" line="export RPI_ROOT=/opt/raspberrypi/root"
     #- lineinfile: dest="/home/vagrant/.profile" line="export RPI_BUILD_ROOT=/opt/RPI_BUILD_ROOT"
@@ -148,16 +149,25 @@
     - lineinfile: dest="/home/vagrant/.profile" line="export PLATFORM_OS=Linux"
     - lineinfile: dest="/home/vagrant/.profile" line="export PLATFORM_ARCH=armv6l"
     - lineinfile: dest="/home/vagrant/.profile" line="export PKG_CONFIG_PATH=${RPI_ROOT}/usr/lib/${GCC_PREFIX}/pkgconfig:${RPI_ROOT}/usr/lib/pkgconfig:${RPI_ROOT}/usr/share/pkgconfig"
-    # - lineinfile: dest="/home/vagrant/.profile" line="export CXX=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-g++"
-    # - lineinfile: dest="/home/vagrant/.profile" line="export CC=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-gcc"
-    # - lineinfile: dest="/home/vagrant/.profile" line="export AR=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-ar"
-    # - lineinfile: dest="/home/vagrant/.profile" line="export LD=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-ld"
+    - lineinfile: dest="/home/vagrant/.profile" line="export CXX=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-g++"
+    - lineinfile: dest="/home/vagrant/.profile" line="export CC=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-gcc"
+    - lineinfile: dest="/home/vagrant/.profile" line="export AR=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-ar"
+    - lineinfile: dest="/home/vagrant/.profile" line="export LD=${TOOLCHAIN_ROOT}/${GCC_PREFIX}-ld"
     
     #OF
-    - unarchive: src={{of_version}}.tar.gz dest=/opt/raspberrypi/root/opt creates=/opt/raspberrypi/root/opt/{{of_version}}
+    # - unarchive: src={{of_version}}.tar.gz dest=/opt/raspberrypi/root/opt creates=/opt/raspberrypi/root/opt/{{of_version}}
+    - shell: 
+        cmd: git clone -b patch-release https://github.com/openframeworks/openFrameworks.git {{of_version}}
+        chdir: /opt/raspberrypi/root/opt/
     - file: src={{of_version}} dest=/opt/raspberrypi/root/opt/openframeworks state=link
     - file: src=/opt/raspberrypi/root/opt/openframeworks dest=/opt/openframeworks state=link
     - command: chown -R vagrant /opt/raspberrypi/root/opt/{{of_version}}
+    - command: sudo /opt/openframeworks/scripts/linux/download_libs.sh
+    - command: sudo /opt/openframeworks/scripts/linux/debian/install_dependencies.sh
+    - command: sudo /opt/openframeworks/scripts/linux/debian/install_codecs.sh
+    - command: sudo /opt/openframeworks/scripts/ci/linuxarmv6l/install.sh
+    - command: sudo openFrameworks/scripts/linux/compileOF.sh
+
 
 
   handlers:

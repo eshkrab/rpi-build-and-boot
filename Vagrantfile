@@ -10,7 +10,9 @@ Vagrant.configure(2) do |config|
   # config.vm.box = "deadbok/debian-stretch-xfce-amd64"
   # config.vm.box_version = "9.2.1"
   #---------------------------------------
-  config.vm.box = "ubuntu/bionic64"
+  # config.vm.box = "debian/stretch64"
+  # config.vm.box = "ubuntu/bionic64"
+  config.vm.box = "generic/debian9"
 
   # If you want to use this system to netboot Raspberry Pi, then uncomment this line
   # config.vm.network "public_network", bridge: 'ask', ip: "10.0.0.1"
